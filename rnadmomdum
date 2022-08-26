@@ -2020,6 +2020,5 @@ function Vanilla:UIIntro()
     IntroFade:Destroy()
 end
 
-return Vanilla
-return VanillaTabSections
+
 return LibraryElements
