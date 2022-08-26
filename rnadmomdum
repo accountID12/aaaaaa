@@ -2019,3 +2019,7 @@ function Vanilla:UIIntro()
     repeat wait() until IntroFade.BackgroundTransparency == 1
     IntroFade:Destroy()
 end
+
+return Vanilla
+return VanillaTabSections
+return LibraryElements
