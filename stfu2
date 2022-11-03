@@ -1,18 +1,1 @@
-function x9999x(gs, fl)
-    local x999 = {
-        gs,
-        fl
-    }
-
-    for i,v in pairs(x999) do
-        if gs then
-            gs = fl
-        end
-    end
-
-
-    return gs, fl
-end
-
-
-x9999x()
+print("fff")
