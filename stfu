@@ -1,1 +1,934 @@
-print("COMPLETED")
+
+
+
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/accountID12/aaaaaa/main/fzefez"))()
+--local NotifyLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/qvrwd/etarry/main/libraries/notification/akalinotif"))()
+--local espLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Sirius/request/library/esp/esp.lua'),true))()
+
+
+local names = {"niggers.lua", "run nigger run", "chariotsware", "charitosware", "niggerware", "nobitches.lua", "nohoes.lua"}
+
+local Window = Library:CreateWindow( names[math.random(#names)].." | BETA ", Vector2.new(492, 598), Enum.KeyCode.RightShift)
+
+--// Tabs
+local AimingTab = Window:CreateTab("Main")
+local MiscTab = Window:CreateTab("Misc")
+
+
+--// Sections
+local TargetAimSec = AimingTab:CreateSector("Target Lock", "left")
+local TargetSettingsSec = AimingTab:CreateSector("Target Setstings", "right")
+local MovementSec = MiscTab:CreateSector("Movement Settings", "left")
+local TrashTalkSec = MiscTab:CreateSector("TrashTalk Settings", "right")
+local StrafeSec = MiscTab:CreateSector("Target Strafe", "left")
+
+-- Start Target Aim
+
+getgenv().targetaimenabled = false
+
+-- main aimlock settings
+local configs = {
+    main = {
+        enabled = false,
+        aimlockkey = "q",
+        prediction = 0.134123,
+        aimpart = 'HumanoidRootPart', -- Head, UpperTorso, HumanoidRootPart, LowerTorso
+        notifications = true,
+        visualizetarget = false,
+        targetunlock = false,
+        targetview = false,
+        Line = true,
+        WallCheck = false,
+        showmarker = false,
+        Resolver = false,
+        Resolvermode = "Underground",
+        autotarget = false,
+        AutoPred = false,
+    }
+}
+
+getgenv().Resolver = {
+    Enabled = false,
+    Mode = "Velocity", -- Velocity,  
+}
+
+-- box / marker settings
+
+local boxsettings = {
+    box = {
+        Showbox = false,
+        ShowMarker = false,
+
+        boxsize = Vector3.new(3.3, 3, 2.8), -- Box Size
+        markercolor = Color3.fromRGB(1, 120, 145), -- Marrker Color
+        markersize = UDim2.new(1, 0, 3, 0) -- Marker Size
+    }
+}
+
+local recalculatedVel;
+
+
+-- dont mess with anything below
+local box = Instance.new("Part", game.Workspace)
+
+local Mouse = game.Players.LocalPlayer:GetMouse()
+
+function makemarker(Parent, Adornee, Color, Size, Size2)
+    local box = Instance.new("BillboardGui", Parent)
+    box.Name = "PRIVATE-REWRITE!"
+    box.Adornee = Adornee
+    box.Size = UDim2.new(Size, Size2, Size, Size2)
+    box.AlwaysOnTop = true
+
+    local a = Instance.new("Frame", box)
+    a.Size = boxsettings.box.markersize
+    a.BackgroundColor3 = Color
+
+    local g = Instance.new("UICorner", a)
+    g.CornerRadius = UDim.new(50, 25)
+    return (box)
+end
+
+
+local CurrentCamera = game:GetService("Workspace").CurrentCamera
+local RunService = game:GetService("RunService")
+local Mouse = game.Players.LocalPlayer:GetMouse()
+local LocalPlayer = game.Players.LocalPlayer
+local Plr
+local LastPlr
+Mouse.KeyDown:Connect(function(KeyPressed)
+    if KeyPressed == (configs.main.aimlockkey) and getgenv().targetaimenabled then
+        if configs.main.enabled == true then
+            configs.main.enabled = false
+            if configs.main.notifications == true then
+                LastPlr = Plr
+                Plr = FindClosestUser()
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "ChariotsWare",
+                    Text = "Unlocked ;)"
+                })
+            end
+        else
+            Plr = FindClosestUser()
+            configs.main.enabled = true
+            if Plr == nil then
+                configs.main.enabled = false
+                return
+            end
+            if configs.main.enabled == true then
+                if configs.main.notifications == true then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "ChariotsWare",
+                        Text = "Locked onto:" .. tostring(Plr.Character.Humanoid.DisplayName)
+                    })
+                end
+            else
+                if configs.main.notifications == true then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "ChariotsWare",
+                        Text = "found no one :cry:"
+                    })
+                end
+            end
+        end
+    end
+end)
+
+local data = game.Players:GetPlayers()
+function noob(player)
+    local character
+    repeat
+        wait()
+    until player.Character
+    local handler = makemarker(guimain, player.Character:WaitForChild(configs.main.aimpart),
+        Color3.fromRGB(107, 184, 255), 0.10, 8)
+    handler.Name = player.Name
+    player.CharacterAdded:connect(function(Char)
+        handler.Adornee = Char:WaitForChild("HumanoidRootPart")
+    end)
+end
+
+for i = 1, #data do
+    if data[i] ~= game.Players.LocalPlayer then
+        noob(data[i])
+    end
+end
+
+game.Players.PlayerAdded:connect(function(Player)
+    noob(Player)
+end)
+
+spawn(function()
+    box.Anchored = true
+    box.CanCollide = false
+    box.Size = boxsettings.box.boxsize
+    if boxsettings.box.Showbox == true then
+        box.Transparency = 0.70
+    else
+        box.Transparency = 1
+    end
+    local transparencydec = 1
+    if boxsettings.box.ShowMarker == true then
+        transparencydec = 1
+    else
+        transparencydec = 0
+    end
+    if configs.main.showmarker == true then
+    makemarker(box, box, boxsettings.box.markercolor, 0.40, transparencydec)
+    end
+end)
+
+--// Line Target
+local Line = Drawing.new("Line")
+Line.Color = Color3.fromRGB(178, 107, 211)
+Line.Visible = false
+Line.Transparency = 0.7
+
+
+--// Status line target
+local StatusLine = Drawing.new("Line")
+StatusLine.Visible = false
+StatusLine.Transparency = 1
+StatusLine.Thickness = 2
+
+local Cameraa = game:GetService("Workspace").CurrentCamera
+
+--// FOV Target Circle
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = false
+FOVCircle.Filled = false
+FOVCircle.Transparency = 0.7
+FOVCircle.Thickness = 2
+FOVCircle.Color = Color3.fromRGB(178, 107, 211)
+FOVCircle.Radius = 140
+
+local function MoveFovCircle()
+	pcall(function()
+		local DoIt = true
+		spawn(function()
+			while DoIt do task.wait()
+				FOVCircle.Position = Vector2.new(Mouse.X, (Mouse.Y + 36))
+			end
+		end)
+	end)
+end coroutine.wrap(MoveFovCircle)()
+
+local FOVON = false
+
+
+local plrs = game:GetService("Players")
+local plr = plrs.LocalPlayer
+local kamera = game:GetService("Workspace").CurrentCamera
+
+function notBehindWall(target)
+    local ray = Ray.new(plr.Character.Head.Position, (target.Position - plr.Character.Head.Position).Unit * 300)
+    local part, position = game:GetService("Workspace"):FindPartOnRayWithIgnoreList(ray, {plr.Character}, false, true)
+    if part then
+        local humanoid = part.Parent:FindFirstChildOfClass("Humanoid")
+        if not humanoid then
+            humanoid = part.Parent.Parent:FindFirstChildOfClass("Humanoid")
+        end
+        if humanoid and target and humanoid.Parent == target.Parent then
+            local pos, visible = kamera:WorldToScreenPoint(target.Position)
+            if visible then
+                return true
+            end
+        end
+    end
+end
+
+
+
+
+function FindClosestUser()
+    local closestPlayer
+    local ShortestDistance = 300
+
+    for i, v in pairs(game.Players:GetPlayers()) do
+        if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and
+            v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = game:GetService("Workspace").CurrentCamera:WorldToViewportPoint(v.Character.PrimaryPart.Position)
+            local magnitude = (Vector2.new(pos.X, pos.Y) -
+                                  Vector2.new(game.Players.LocalPlayer:GetMouse().X,
+                    game.Players.LocalPlayer:GetMouse().Y)).magnitude
+            if FOVON == true then
+                if configs.main.WallCheck == true then
+                    if notBehindWall(v.Character.HumanoidRootPart) then
+                        if magnitude < ShortestDistance and magnitude < FOVCircle.Radius then
+                            closestPlayer = v
+                            ShortestDistance = magnitude
+                        end
+                    end
+                else
+                    if magnitude < ShortestDistance and magnitude < FOVCircle.Radius then
+                        closestPlayer = v
+                        ShortestDistance = magnitude
+                    end
+                end
+            else
+                if configs.main.WallCheck == true then
+                    if notBehindWall(v.Character.HumanoidRootPart) then
+                        if magnitude < ShortestDistance then
+                            closestPlayer = v
+                            ShortestDistance = magnitude
+                        end
+                    end
+                else
+                    if magnitude < ShortestDistance then
+                        closestPlayer = v
+                        ShortestDistance = magnitude
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local Y = -0
+game:GetService("RunService").Stepped:connect(function()
+    if configs.main.enabled and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+        box.CFrame = CFrame.new(Plr.Character[configs.main.aimpart].Position +
+                                    (Plr.Character.UpperTorso.Velocity * configs.main.prediction))
+    else
+        box.CFrame = CFrame.new(0, 9999, 0)
+    end
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if Plr ~= nil then
+        if getgenv().Resolver.Enabled == true and getgenv().Resolver.Mode == "Recalculation" then
+            recalculatedVel = getVel(Plr)
+        end
+    end
+end)
+
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(...)
+    local args = {...}
+    if getgenv().Resolver.Enabled == false then
+        if configs.main.enabled and getnamecallmethod() == "FireServer" and args[2] == "GetMousePos" then
+
+                -- args
+                args[3] = Plr.Character[configs.main.aimpart].Position +
+                            (Plr.Character[configs.main.aimpart].Velocity * configs.main.prediction)
+                return old(unpack(args))
+        end
+    elseif getgenv().Resolver.Enabled == true then
+        if configs.main.enabled and getnamecallmethod() == "FireServer" and args[2] == "GetMousePos" then
+            print("resolving")
+            -- args
+            args[3] = Plr.Character[configs.main.aimpart].Position +
+                        (recalculatedVel * configs.main.prediction)
+            return old(unpack(args))
+        end
+    end
+    return old(...)
+end)
+
+TargetAimSec:AddToggle("Target Enabled", false, function(enabled)
+    getgenv().targetaimenabled = enabled
+end)
+
+TargetAimSec:AddKeybind("Lock key", "q" , function(key)
+    configs.main.aimlockkey = string.lower(key)
+end)
+
+
+local pred;
+TargetAimSec:AddTextbox("Prediction", "0.134123", function(value)
+    configs.main.prediction = value
+    pred = value
+end)
+
+--TargetAimSec:AddToggle("Auto Prediction", false, function(enabled)
+--    configs.main.AutoPred = enabled
+--end)-
+
+TargetAimSec:AddToggle("Target notifications", false, function(enabled)
+    configs.main.notifications = enabled
+end)
+
+--TargetAimSec:AddToggle('Target View', false, function(enabled)
+--    configs.main.targetview = enabled
+--end)
+
+TargetAimSec:AddDropdown("Target Bone", {"Head", "HumanoidRootPart"}, "HumanoidRootPart", false, function(option)
+    configs.main.aimpart = option
+end)
+
+TargetAimSec:AddToggle('Find target within FOV only', false, function(enabled)
+    FOVON = enabled
+end)
+
+
+TargetAimSec:AddToggle('Target Wallcheck', false, function(enabled)
+    configs.main.WallCheck = enabled
+end)
+
+TargetAimSec:AddToggle('Resolver', false, function(enabled)
+    getgenv().Resolver.Enabled = enabled
+end)
+
+TargetAimSec:AddDropdown("Resolver Mode", {"Velocity", "Recalculation"}, "Velocity", false, function(option)
+    getgenv().Resolver.Mode = option
+end)
+
+local switchmodeKey;
+TargetAimSec:AddKeybind("Switch mode", "z" , function(key)
+    switchmodeKey = string.lower(key)
+end)
+
+local fovcolor = TargetAimSec:AddToggle('Draw FOV', false, function(enabled)
+    FOVCircle.Visible = enabled
+end)
+
+fovcolor:AddColorpicker(Color3.fromRGB(178, 107, 211), function(color)
+    FOVCircle.Color = color
+end)
+
+TargetAimSec:AddSlider("FOV Size", 1, 69, 800, 1, function(value)
+	FOVCircle.Radius = value
+end)
+
+TargetAimSec:AddToggle('Draw Line', false, function(enabled)
+    configs.main.Line = enabled
+end)
+
+
+function getVel(Target)
+    local lastPosition = Target.Character.HumanoidRootPart.Position
+    wait(1)
+    local currentPosition = Target.Character.HumanoidRootPart.Position
+    local newVelocity = (currentPosition - lastPosition) / 1
+    return newVelocity
+end
+
+ 
+game:GetService("RunService").Heartbeat:Connect(function()
+    if getgenv().Resolver.Enabled == true then
+        if getgenv().Resolver.Mode == "Velocity" then
+            for i,v in pairs(game.Players:GetPlayers()) do
+                if v and v.Character and v.Name ~= game.Players.LocalPlayer.Name then
+                    local old_vel = v.Character.HumanoidRootPart.Velocity
+                    
+                    v.Character.HumanoidRootPart.Velocity = Vector3.new(old_vel.X, -0.0000000000000000000000000000001, old_vel.Z)
+                end
+            end
+        end
+    end
+end)
+
+
+Mouse.KeyDown:Connect(function(KeyPressed)
+    if KeyPressed == (switchmodeKey) then
+        if getgenv().Resolver.Mode == "Velocity" then
+            getgenv().Resolver.Mode = "NoPred"
+        elseif getgenv().Resolver.Mode == "NoPred" then
+            getgenv().Resolver.Mode = "Velocity"
+        else 
+            getgenv().Resolver.Mode = "Velocity";
+            print("lowkey nothing found ngl")
+        end
+    end
+end)
+
+
+--// Target Strafe
+local StrafeSettings = {
+    Enabled = true,
+    Speed = 2,
+    Radius = 15,
+}
+
+
+
+local Yung = loadstring(game:HttpGet("https://raw.githubusercontent.com/ao-0/Yun/main/32d_api.lua"))()
+local Circle = Yung:New3DCircle()
+Circle.Visible = false
+Circle.ZIndex = 4
+Circle.Transparency = 1
+Circle.Color = Color3.fromRGB(255,255,255)
+Circle.Thickness = 1
+Circle.Radius = StrafeSettings.Radius;
+local delta = 0
+
+game:GetService("RunService").Stepped:Connect(
+    function(a, b)
+    if Plr ~= nil and StrafeSettings.Enabled and configs.main.enabled then
+        delta = (delta + b / StrafeSettings.Speed) % 1
+        Circle.Visible = true
+        Circle.Position = Plr.Character.HumanoidRootPart.Position
+        Circle.Color = Color3.fromRGB(255,255,255)
+        Circle.Radius = StrafeSettings.Radius
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.Angles(0, 2 * math.pi * delta, 0) * CFrame.new(0, 0, Circle.Radius) + Plr.Character.HumanoidRootPart.Position
+
+    else
+        Circle.Visible = false
+    end
+end)
+
+
+
+
+
+
+
+
+-- Target setstings // TargetSettingsSec
+
+local CustomSets = {
+    Enabled = false,
+    statusline = false,
+    state = "",
+    close,
+    closeMagnitude = 20,
+    closecolor = Color3.fromRGB(255, 243, 28),
+    mid,
+    midMagnitude = 75,
+    midcolor = Color3.fromRGB(255, 173, 16),
+    far,
+    farMagnitude = 200,
+    farcolor = Color3.fromRGB(255, 3, 1),
+}
+
+TargetSettingsSec:AddToggle('Enable Custom Sets', false, function(enabled)
+    CustomSets.Enabled = enabled
+end)
+
+TargetSettingsSec:AddToggle('Enable Satus Line', false, function(enabled)
+    CustomSets.statusline = enabled
+end)
+
+TargetSettingsSec:AddTextbox("Close set", nil, function(value)
+    CustomSets.close = value
+end)
+
+TargetSettingsSec:AddSlider("Close magnitude", 1, 20, 200, 1, function(value)
+	CustomSets.closeMagnitude = value
+end)
+
+TargetSettingsSec:AddColorpicker("Close Status Color", Color3.fromRGB(255, 243, 28), function(color)
+    CustomSets.closecolor = color
+end)
+
+
+TargetSettingsSec:AddTextbox("Mid set", nil, function(value)
+    CustomSets.mid = value
+end)
+
+TargetSettingsSec:AddSlider("Mid magnitude", 1, 75, 200, 1, function(value)
+	CustomSets.midMagnitude = value
+end)
+
+TargetSettingsSec:AddColorpicker("Mid Status Color",Color3.fromRGB(255, 173, 16), function(color)
+    CustomSets.midcolor = color
+end)
+
+TargetSettingsSec:AddTextbox("Far set", nil, function(value)
+    CustomSets.far = value
+end)
+
+TargetSettingsSec:AddSlider("Far magnitude", 1, 200, 200, 1, function(value)
+	CustomSets.farMagnitude = value
+end)
+
+TargetSettingsSec:AddColorpicker("Far Status Color",Color3.fromRGB(255, 3, 1), function(color)
+    CustomSets.farcolor = color
+end)
+
+local CFramesettings = {
+    Enabled = false,
+    Speed = 2,
+}
+
+MovementSec:AddToggle('Speed Enabled', false, function(enabled)
+    CFramesettings.Enabled = enabled
+end)
+
+MovementSec:AddSlider("Speed Speed", 1, 2, 5, 1, function(value)
+	CFramesettings.Speed = value
+end)
+
+--// ChariotsWare Trashtalk
+local ChariotsWareMode = {
+    "Is your monitor even on????",
+    "Did you know Roblox is free to uninstall???",
+    "L L L L L L L L L L",
+    "Imagine your potential if you didn't have parkinsons",
+    "Choose your excuse: 1.Lagg | 2.New mouse | 3.Low FPS | 4.Hacker ",
+    "You're as useless as the 'ueue' in 'queue'",
+    "now playing: Who asked (Feat: Nobody did)",
+    "Even Noah can't carry these animals...",
+    "hi son",
+    "you're literally so bad looooool",
+    "literally dropped kid",
+    "start aiming at me not the air",
+    "get good, get chariotsware",
+    "start logging kid",
+    "fighting you makes me feel like i'm the best",
+    "even an adoption center wouldn't take you in",
+    "If the body is 70% water how are you 100% salt???",
+    "I bet you’re that guy that dies in the tutorial",
+    "If this guy was the shooter harambe would still be alive.",
+    "At least you did 100 damage to the wall behind me",
+    "Internet Explorer is faster than your reactions",
+    "Is that a decoy, or are you trying to shoot somebody?",
+    "I'm not trash talking, I'm talking to trash🤡🤡",
+    "I have not met with anything in natural history more amusing and entertaining than your personal appearance.",
+    "Safest place for us to stand is in front of your gun...",
+    "Options -> How To Play",
+    "did you skip the tutorial?",
+    "take your blindfold off and start shooting at me",
+    "Rest in spaghetti never forgetti",
+    "Bhopped to your mom's house last Sunday, top kek.",
+    "You're the human equivalent of a participation award.",
+    "You have the reaction time of a dead puppy.🤡🤡",
+    "You're the reason the gene pool should have a life guard.",
+    "Did you grow up near by Tschernobyl cause why are you so toxic?",
+    "I'm surprised you've got the brain power to keep your heart beating",
+    "You could not pre-fire a marching band full of elephants.🤡🤡",
+    "Hey mate, what controller are you using?",
+    "How'd you hit the PLAY button with that aim?",
+    "On a scale from 1 to 10, how old are you?",
+    "your brain is the size of an atom son run 1s",
+    "Are you sleeping or playing???🤡🤡",
+    "Stop eating so much fatty",
+    "your aim is like your dad, non existant",
+    "you're not the clown, you're the entire circus",
+    "pro tip: start dodging by bullets, not running into them😹😹",
+    "you just took the L",
+    "clip yourself dying",
+    "go do your homework📚📚",
+    "bet you used a fake ID to get voicechat🤡🤡",
+    "you're an example of fatherless behaviour",
+    "You are not a Clown🤡, nor a Circus🎪, not even a carnival🎪. You're the entire comical entertainment industry.",
+    "go touch 🌿grass🌿",
+    "chariots ware = god",
+    "how about you start using chariotsware😍😍",
+    "dude you're getting farmed",
+    "sob harder😭😭😭😭😭",
+    "this is u -> 🤡🤡🤡🤡🤡",
+
+}
+
+local facts = {
+    "The pancreas produces Insulin.",
+    " 1 in 5000 north Atlantic lobsters are born bright blue.",
+    'The word "lethologica" describes the state of not being able to remember the word you want.',
+    "Odontophobia is the fear of teeth.",
+    "The 57 on Heinz ketchup bottles represents the number of varieties of pickles the company once had.",
+    "The surface area of an average-sized brick is 79 cm squared.",
+    'Karoke means "empty orchestra" in Japanese.',
+    "The first known contraceptive was crocodile dung, used by Egyptians in 2000 B.C.",
+    "When you die your hair still grows for a couple of months.",
+    "There are two credit cards for every person in the United States.",
+
+
+}
+
+local player = game.Players.LocalPlayer
+local keybind = "v"
+local trashtalkon = false
+local ttmode = "OG ChariotsWare"
+TrashTalkSec:AddToggle('TrashTalk Enabled', false, function(enabled)
+    trashtalkon = enabled
+end)
+
+local event = game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest
+
+player:GetMouse().KeyDown:connect(function(key)
+    if key == keybind and trashtalkon == true and ttmode == "OG ChariotsWare" then
+        event:FireServer(ChariotsWareMode[math.random(#ChariotsWareMode)], "All")
+    elseif key == keybind and trashtalkon == true and ttmode == "Facts" then
+        event:FireServer(facts[math.random(#facts)], "All")
+    end
+end)
+
+TrashTalkSec:AddDropdown("TrashTalk Mode", {"OG ChariotsWare", "Facts"}, "OG ChariotsWare", false, function(option)
+    ttmode = option
+end)
+
+TrashTalkSec:AddKeybind("TrashTalk Key", "v", function(key)
+    keybind = key
+end)
+
+StrafeSec:AddToggle('Toggle Strafe', false, function(enabled)
+    StrafeSettings.Enabled = enabled
+end)
+
+StrafeSec:AddSlider("Speed", 0, 2, 10, 0.5, function(value)
+	StrafeSettings.Speed = value
+end)
+
+StrafeSec:AddSlider("Range", 0, 15, 50, 1, function(value)
+	StrafeSettings.Radius = value
+end)
+
+local Inset = game:GetService("GuiService"):GetGuiInset().Y
+
+
+local upmag;
+game:GetService("RunService").Heartbeat:Connect(function()
+    if configs.main.targetunlock == true and configs.main.enabled == true then
+        if Plr ~= nil then
+            if Plr.Character.Humanoid.Health == 0 then
+                configs.main.enabled = false
+            end
+        end
+    end
+
+    if configs.main.targetview and configs.main.enabled == true then
+        if Plr ~= nil then
+            game.Workspace.CurrentCamera.CameraSubject = Plr.Character
+        end
+    else
+        if game.Players.LocalPlayer.Character then
+            game.Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
+        end
+    end
+
+    if CustomSets.statusline == true and configs.main.enabled == true and Plr then
+        local Vector = CurrentCamera:WorldToViewportPoint(Plr.Character[configs.main.aimpart].Position +
+                                    (Plr.Character.HumanoidRootPart.Velocity * configs.main.prediction))
+        local LocalVector = CurrentCamera:WorldToViewportPoint(
+            game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+        )
+
+        StatusLine.From = Vector2.new(LocalVector.X, LocalVector.Y)
+        StatusLine.To = Vector2.new(Vector.X, Vector.Y)
+
+        if CustomSets.state == "close" then
+            StatusLine.Color = CustomSets.closecolor
+        elseif CustomSets.state == "mid" then
+            StatusLine.Color = CustomSets.midcolor
+        elseif CustomSets.state == "far" then
+            StatusLine.Color = CustomSets.farcolor
+        else
+            StatusLine.Color = Color3.new(255, 255, 255)
+        end
+        StatusLine.Visible = true
+    else
+        StatusLine.Visible = false
+    end
+
+    if configs.main.Line == true and configs.main.enabled == true then
+
+        local Vector = CurrentCamera:WorldToViewportPoint(Plr.Character[configs.main.aimpart].Position +
+                                                (Plr.Character.HumanoidRootPart.Velocity * configs.main.prediction))
+
+        Line.From = Vector2.new(Mouse.X, Mouse.Y + Inset)
+        Line.To = Vector2.new(Vector.X, Vector.Y)
+        Line.Visible = true
+    else
+        Line.Visible = false
+
+
+    end
+
+    if configs.main.autotarget == true then
+        Plr = FindClosestUserr()
+    end
+
+    if configs.main.AutoPred == true then
+        pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+        split = string.split(pingvalue,'(')
+        ping = tonumber(split[1])
+        if ping > 360 then
+            configs.main.prediction = 0
+        elseif ping > 250 then
+            configs.main.prediction = 0.157
+        elseif ping > 200 then
+            configs.main.prediction = 0.149
+        elseif ping > 140 then
+            configs.main.prediction = 0.153
+        elseif ping > 100 then
+            configs.main.prediction = 0.146
+        elseif ping > 90 then
+            configs.main.prediction = 0.138
+        elseif ping > 80 then
+            configs.main.prediction = 0.134
+        elseif ping > 70 then
+            configs.main.prediction = 0.131
+        elseif ping > 60 then
+            configs.main.prediction = 0.1229
+        elseif ping > 50 then
+            configs.main.prediction = 0.1225
+        elseif ping > 40 then
+            configs.main.prediction = 0.1256
+        elseif ping > 30 then
+            configs.main.prediction = 0.11314
+        end
+    end
+
+    if CustomSets.Enabled == true then
+        if Plr == nil then print("no player") return end
+
+        if Plr ~= nil then
+            local magnitude = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - Plr.Character.HumanoidRootPart.Position).Magnitude
+            upmag = magnitude
+            -- close 30
+            if Plr and magnitude <= CustomSets.closeMagnitude then
+                CustomSets.state = "close"
+            
+            elseif Plr and magnitude >= CustomSets.closeMagnitude and magnitude <= CustomSets.midMagnitude then
+                CustomSets.state = "mid"
+            
+            elseif Plr and magnitude >= CustomSets.midMagnitude then
+                CustomSets.state = "far"
+            end
+
+            if CustomSets.state == "close" then
+                print("yes" .. CustomSets.state)
+                if CustomSets.close ~= nil then
+                    configs.main.prediction = CustomSets.close
+                    print(configs.main.prediction, CustomSets.close)
+                end
+            elseif CustomSets.state == "mid" then
+                print("yes" .. CustomSets.state)
+                if CustomSets.mid ~= nil then
+                    configs.main.prediction = CustomSets.mid
+                    print(configs.main.prediction, CustomSets.mid)
+                end
+            elseif CustomSets.state == "far" then
+                print("yes" .. CustomSets.state)
+                if CustomSets.far ~= nil then
+                    configs.main.prediction = CustomSets.far
+                    print(configs.main.prediction, CustomSets.far)
+                end
+            end
+        end
+    end
+
+    if CFramesettings.Enabled then
+		if game.Players.LocalPlayer.Character.Humanoid.MoveDirection.Magnitude > 0 then
+			for i = 1, CFramesettings.Speed do
+				game.Players.LocalPlayer.Character:TranslateBy(game.Players.LocalPlayer.Character.Humanoid.MoveDirection)
+			end
+		end
+	end
+end)
+
+
+
+
+
+
+
+--// Indicators
+
+
+local cwtext = Drawing.new("Text")
+cwtext.Text = "ChariotsWare"
+cwtext.Color = Color3.fromRGB(0, 153, 255)
+cwtext.Font = 2
+cwtext.Outline = true
+cwtext.OutlineColor = Color3.new()
+cwtext.Position = Vector2.new(950, 566,5)
+cwtext.Size = 20
+cwtext.Visible = true
+cwtext.Center = true
+
+local nametext = Drawing.new("Text")
+nametext.Text = "namehere"
+nametext.Color = Color3.fromRGB(255, 255, 255)
+nametext.Font = 2
+nametext.Outline = true
+nametext.OutlineColor = Color3.new()
+nametext.Position = Vector2.new(950, 590,5)
+nametext.Size = 15
+nametext.Visible = true
+nametext.Center = true
+
+local resolverhere = Drawing.new("Text")
+resolverhere.Text = "Resolver"
+resolverhere.Color = Color3.fromRGB(255, 255, 255)
+resolverhere.Font = 2
+resolverhere.Outline = true
+resolverhere.OutlineColor = Color3.new()
+resolverhere.Position = Vector2.new(950, 610,5)
+resolverhere.Size = 15
+resolverhere.Visible = true
+resolverhere.Center = true
+
+local modehere = Drawing.new("Text")
+modehere.Text = "Velocity"
+modehere.Color = Color3.fromRGB(255, 255, 255)
+modehere.Font = 2
+modehere.Outline = true
+modehere.OutlineColor = Color3.new()
+modehere.Position = Vector2.new(950, 620,5)
+modehere.Size = 15
+modehere.Visible = true
+modehere.Center = true
+
+local desyncdetection = Drawing.new("Text")
+desyncdetection.Text = "Desync Detection"
+desyncdetection.Color = Color3.fromRGB(255, 255, 255)
+desyncdetection.Font = 2
+desyncdetection.Outline = true
+desyncdetection.OutlineColor = Color3.new()
+desyncdetection.Position = Vector2.new(950, 646,5)
+desyncdetection.Size = 15
+desyncdetection.Visible = true
+desyncdetection.Center = true
+
+local desyncpercentage = 0
+game:GetService("RunService").Heartbeat:Connect(function()
+    if getgenv().Resolver.Enabled == true then
+        resolverhere.Color = Color3.fromRGB(0, 255, 0)
+        modehere.Color = Color3.fromRGB(0, 255, 0)
+    else
+        resolverhere.Color = Color3.fromRGB(255, 0, 0)
+        modehere.Color = Color3.fromRGB(255, 0, 0)
+    end
+
+    if getgenv().Resolver.Mode == "Velocity" then
+        modehere.Text = "Velocity"
+    else
+        modehere.Text = "Recalculation"
+    end
+
+    if Plr then
+        nametext.Text = Plr.Name
+    else 
+        nametext.Text = "$Not Locked"
+    end
+
+    -- 0 = green
+    -- 0 - 20 = yellow
+    -- 20 - 50 = orange
+    -- 50 - 70 = light red
+    -- 70 - 100 = dark red
+
+    if Plr then
+        if Plr.Character.HumanoidRootPart.Velocity.X > 100 and Plr.Character.Humanoid:GetState() ~= "Running" then
+            desyncpercentage = 60
+        elseif Plr.Character.HumanoidRootPart.Velocity.X > 100 and Plr.Character.Humanoid:GetState() == "Running" then
+            desyncpercentage = 30
+        elseif Plr.Character.HumanoidRootPart.Velocity.X > 250 and Plr.Character.Humanoid:GetState() ~= "Running" then
+            desyncpercentage = 100
+        elseif Plr.Character.HumanoidRootPart.Velocity.Y < -10 and Plr.Character.HumanoidRootPart ~= "FreeFall" then
+            desyncpercentage = 40
+        elseif Plr.Character.HumanoidRootPart.Velocity.Y < -20 and Plr.Character.HumanoidRootPart == "FreeFall" then
+            desyncpercentage = 10
+        end
+    end
+
+    if desyncpercentage == 0 then
+        desyncdetection.Color = Color3.fromRGB(0,255,0) -- green
+    elseif desyncpercentage < 20 then
+        desyncdetection.Color = Color3.fromRGB(255,255,0) -- yellow
+    elseif desyncpercentage > 20 and desyncpercentage < 50 then
+        desyncdetection.Color = Color3.fromRGB(255, 95, 31) -- orange
+    elseif desyncpercentage > 50 and desyncpercentage < 70 then
+        desyncdetection.Color = Color3.fromRGB(210, 4, 45) -- light red
+    elseif desyncpercentage > 70 then
+        desyncdetection.Color = Color3.fromRGB(136, 8, 8) -- dark red
+    end
+end)
+
+
