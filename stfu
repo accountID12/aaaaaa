@@ -19,9 +19,12 @@ local MiscTab = Window:CreateTab("Misc")
 --// Sections
 local TargetAimSec = AimingTab:CreateSector("Target Lock", "left")
 local TargetSettingsSec = AimingTab:CreateSector("Target Setstings", "right")
+
+--// Miscellanous
 local MovementSec = MiscTab:CreateSector("Movement Settings", "left")
 local TrashTalkSec = MiscTab:CreateSector("TrashTalk Settings", "right")
 local StrafeSec = MiscTab:CreateSector("Target Strafe", "left")
+
 
 -- Start Target Aim
 
@@ -302,6 +305,10 @@ game:GetService("RunService").RenderStepped:Connect(function()
             recalculatedVel = getVel(Plr)
         end
     end
+
+    if Plr ~= nil and getgenv().Resolver.Enabled == true then
+        Plr.Character.HumanoidRootPart.Velocity = Vector3.new(recalculatedVel);
+    end
 end)
 
 local mt = getrawmetatable(game)
@@ -309,22 +316,12 @@ local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(...)
     local args = {...}
-    if getgenv().Resolver.Enabled == false then
-        if configs.main.enabled and getnamecallmethod() == "FireServer" and args[2] == "GetMousePos" then
+    if configs.main.enabled and getnamecallmethod() == "FireServer" and args[2] == "GetMousePos" then
 
-                -- args
-                args[3] = Plr.Character[configs.main.aimpart].Position +
-                            (Plr.Character[configs.main.aimpart].Velocity * configs.main.prediction)
-                return old(unpack(args))
-        end
-    elseif getgenv().Resolver.Enabled == true then
-        if configs.main.enabled and getnamecallmethod() == "FireServer" and args[2] == "GetMousePos" then
-            print("resolving")
-            -- args
-            args[3] = Plr.Character[configs.main.aimpart].Position +
-                        (recalculatedVel * configs.main.prediction)
-            return old(unpack(args))
-        end
+        -- args
+        args[3] = Plr.Character[configs.main.aimpart].Position +
+            (Plr.Character[configs.main.aimpart].Velocity * configs.main.prediction)
+        return old(unpack(args))
     end
     return old(...)
 end)
@@ -667,6 +664,7 @@ end)
 StrafeSec:AddSlider("Range", 0, 15, 50, 1, function(value)
 	StrafeSettings.Radius = value
 end)
+
 
 local Inset = game:GetService("GuiService"):GetGuiInset().Y
 
